@@ -1,3 +1,4 @@
+# The function performs variable selection for the MLB priors.
 MLBselect <- function(beta.gibbs,B, burnin, alpha, th, method){
   if (method=="intervals"){
     effsamp <- B - burnin
