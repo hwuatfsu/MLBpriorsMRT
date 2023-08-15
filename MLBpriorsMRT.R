@@ -1,3 +1,4 @@
+library(MfUSampler)
 comp_sim <- function(p, seed){
   
   n <- 100
