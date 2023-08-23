@@ -1,7 +1,7 @@
 library(MfUSampler)
 
   
-  MLBpriorsMRT<-function(B,burnin,a.lam,b.lam,a.tau,b.tau,a.taub,b.taub,n,P,r){
+  MLBpriorsMRT<-function(y1,y2,y3,X1star,X2star,X3star,B,burnin,a.lam,b.lam,a.tau,b.tau,a.taub,b.taub,n,P,r){
   
   
   beta.gibbs = matrix(0,P,B)
