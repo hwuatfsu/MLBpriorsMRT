@@ -93,8 +93,27 @@ comp_sim <- function(p, seed){
   
   
   list <- list(rmse_mlb_all, fpr_mlb, fnr_mlb)
-  colnames(list) <- c("rmse_mlb_all",  "fpr_hgt", "fnr_hgt")
-  
+
   return(list)
   
+}
+
+
+library(foreach)
+library(doParallel)
+registerDoParallel(8) 
+
+re10 <- foreach (seed=200:219,.combine=rbind) %dopar% {
+  comp_sim(seed, p =10)
+}
+
+re20 <- foreach (seed=100:119,.combine=rbind) %dopar% {
+  comp_sim(seed, p =20)
+}
+
+re30 <- foreach (seed=100:119,.combine=rbind) %dopar% {
+  comp_sim(seed, p =30)
+}
+re40 <- foreach (seed=100:119,.combine=rbind) %dopar% {
+  comp_sim(seed, p = 40)
 }
