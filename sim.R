@@ -1,4 +1,5 @@
-
+comp_sim <- function(p, seed){
+  
   n <- 100
   n1 <- 35
   n2 <- 35
@@ -86,9 +87,14 @@
   rmse_mlb_all <- sqrt(t((Xstar%*%betastar) - Xstar%*%betahat)%*%(Xstar%*%betastar - Xstar%*%betahat)/n)
   
   #FPR FNR
-  shared_th_signal3 <- MLBselect(out$beta,B=5000, burnin = 2000,th=0.32, method = "intervals", alpha = 0.05)
-  fpr_mlb <- fpr(shared_th_signal3,betastar)
-  fnr_mlb <- fnr(shared_th_signal3,betastar)
+  shared_th_signal <- MLBselect(out$beta,B=5000, burnin = 2000,th=0.32, method = "intervals", alpha = 0.05)
+  fpr_mlb <- fpr(shared_th_signal,betastar)
+  fnr_mlb <- fnr(shared_th_signal,betastar)
   
   
+  list <- list(rmse_mlb_all, fpr_mlb, fnr_mlb)
+  colnames(list) <- c("rmse_mlb_all",  "fpr_hgt", "fnr_hgt")
   
+  return(list)
+  
+}
