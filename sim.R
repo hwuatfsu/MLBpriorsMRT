@@ -1,4 +1,9 @@
-comp_sim <- function(p, seed){
+library(foreach)
+library(doParallel)
+library(ggplot2)
+library(ggpubr)
+
+comp_sim <- function(seed, p){
   
   n <- 100
   n1 <- 35
@@ -9,7 +14,7 @@ comp_sim <- function(p, seed){
   index3 <- (n1+n2+1):(n)
   P <- 3*p
   
-  set.seed(seed)
+  set.seed(100)
   Xt <- matrix(runif(n*p),n,p)
   X <- Xt
   X[,1] <- sin(pi*Xt[,1]*Xt[,2])
@@ -20,10 +25,11 @@ comp_sim <- function(p, seed){
   X3 <- X[index3,]
   
   X.add <-  as.matrix(t(apply(X[,c(4,5,6,7)], 1, combn, 2, prod)))
-  r <- ncol(X.add)
+  R <- ncol(X.add)
   X.add1 <- X.add[index1,]
   X.add2 <- X.add[index2,]
   X.add3 <- X.add[index3,]
+  
   X.add1.12 <- rbind(X.add1[18:35,], X.add2[1:17,])
   X.add1.13 <- rbind(X.add1[1:17,], X.add3[13:30,])
   
@@ -33,9 +39,9 @@ comp_sim <- function(p, seed){
   X.add3.13 <- rbind(X.add1[1:15,], X.add3[16:30,])
   X.add3.23 <- rbind(X.add2[21:35,], X.add3[1:15,])
   
-  X1star <- cbind(X1, matrix(0, n1, p), matrix(0, n1, p), X.add1.12, X.add1.13, matrix(0, n1, r))
-  X2star <- cbind(matrix(0, n2, p), X2, matrix(0, n2, p), X.add2.12, matrix(0, n2, r), X.add2.23)
-  X3star <- cbind(matrix(0, n3, p),matrix(0, n3, p), X3,matrix(0, n3, r),X.add3.13, X.add3.23)
+  X1star <- cbind(X1, matrix(0, n1, p), matrix(0, n1, p), X.add1.12, X.add1.13, matrix(0, n1, R))
+  X2star <- cbind(matrix(0, n2, p), X2, matrix(0, n2, p), X.add2.12, matrix(0, n2, R), X.add2.23)
+  X3star <- cbind(matrix(0, n3, p),matrix(0, n3, p), X3,matrix(0, n3, R),X.add3.13, X.add3.23)
   Xstar <- rbind(X1star, X2star, X3star)
   
   beta1 <- as.matrix(c(10,20,10,10,10,10,0*seq(1,(p-6))))
@@ -48,12 +54,13 @@ comp_sim <- function(p, seed){
   
   betastar <- rbind(beta1, beta2, beta3, beta1.add, beta2.add, beta3.add)
   
+  
   w1star <- X1star%*%betastar
   w2star <- X2star%*%betastar
   w3star <- X3star%*%betastar
   wstar <- rbind(w1star, w2star, w3star)
   
-  
+  set.seed(seed)
   sigma <- 1
   N <- 40
   r <- 20
@@ -65,20 +72,17 @@ comp_sim <- function(p, seed){
   
   B = 5000
   burnin = 2000
-  a.lam =1
-  b.lam= 2
+  a.lam =0.5
+  b.lam= 0.5
   
-  a.tau=1
-  b.tau =2
+  a.tau=10
+  b.tau =10
   
-  a.taub =1
-  b.taub = 2
+  a.taub =10
+  b.taub = 10
   
-  n = length(y)
-  P = ncol(Xstar)
-  r = 40
-  
-  out <- MLBpriorsMRT(B,burnin,a.lam,b.lam,a.tau,b.tau,a.taub,b.taub,n,P,r)
+
+  out <- MLBpriorsMRT(y1,y2,y3,X1star,X2star,X3star,B,burnin,a.lam,b.lam,a.tau,b.tau,a.taub,b.taub,N,r)
   
   out$betahat
   betahat <-  out$betahat
@@ -99,11 +103,10 @@ comp_sim <- function(p, seed){
 }
 
 
-library(foreach)
-library(doParallel)
+
 registerDoParallel(8) 
 
-re10 <- foreach (seed=200:219,.combine=rbind) %dopar% {
+re10 <- foreach (seed=100:119,.combine=rbind) %dopar% {
   comp_sim(seed, p =10)
 }
 
@@ -117,3 +120,27 @@ re30 <- foreach (seed=100:119,.combine=rbind) %dopar% {
 re40 <- foreach (seed=100:119,.combine=rbind) %dopar% {
   comp_sim(seed, p = 40)
 }
+
+
+sim.p <- as.factor(c(rep(10,b),rep(20,b), rep(30,b), rep(40,b)))
+sim.rmse <- as.numeric(c(re10[,1], re20[,1], re30[,1], re40[,1]))
+sim.fpr <- as.numeric(c(re10[,2], re20[,2], re30[,2], re40[,2]))
+sim.fnr <- as.numeric(c(re10[,3], re20[,3], re30[,3], re40[,3]))
+sim.dat <- data.frame(sim.p = sim.p, sim.rmse=sim.rmse, sim.fpr=sim.fpr, sim.fnr=sim.fnr)
+
+
+boxrmse <- ggplot(sim.dat, aes(x=sim.p, y=sim.rmse)) + 
+  geom_boxplot(outlier.shape = NA)+
+  coord_cartesian()+
+  theme(text = element_text(size=20),
+        axis.text.x = element_text(angle=90, hjust=1))+
+  xlab("p") + ylab("RMSE")
+
+boxfnr<-ggplot(sim.dat, aes(x=sim.p, y=sim.fnr)) + 
+  geom_boxplot(outlier.shape = NA)+
+  theme(text = element_text(size=25),
+        axis.text.x = element_text(angle=90, hjust=1))+
+  xlab("p") + ylab("FNR")
+
+ggarrange(boxrmse,boxfnr, 
+          ncol = 2, nrow = 1)
