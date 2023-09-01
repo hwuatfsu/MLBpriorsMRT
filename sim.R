@@ -1,3 +1,14 @@
+# This code provides the simulation study from Wu and Bradley (2023).
+# The model assumes that data y are of multiple response-type, where y1 is continuous-valued, y2 is integer-valued, and y3 is count-valued.
+# X1star, X2star, and X3star are design matrices, such that y has a has a linear mixed effects representation on the appropriate link scale denoted with Xstar*beta.
+# B The number of iterations of the block Gibbs sampler with burnin.
+# N The sample size associated with the binomial observations.
+# r The sample size associated with the negative binomial observations.
+# a.lam and b.lam The values for the shape parameter associated with lambda.
+# a.tau and b.tau The values for the shape parameter associated with tau.
+# a.taub and b.taub The values for the shape parameter associated with tau_beta.
+# The function returns root mean squared error (RMSE), average false negative rate (FNR), and average false positive rate (FPR).
+
 library(foreach)
 library(doParallel)
 library(ggplot2)
